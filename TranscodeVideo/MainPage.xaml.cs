@@ -31,7 +31,47 @@ namespace TranscodeVideo
         public MainPage()
         {
             this.InitializeComponent();
-           
+            CheckFingerprintAvailability();
+        }
+
+        public async System.Threading.Tasks.Task<string> CheckFingerprintAvailability()
+        {
+            string returnMessage = "";
+
+            try
+            {
+                // Check the availability of fingerprint authentication.
+                var ucvAvailability = await Windows.Security.Credentials.UI.UserConsentVerifier.CheckAvailabilityAsync();
+
+                switch (ucvAvailability)
+                {
+                    case Windows.Security.Credentials.UI.UserConsentVerifierAvailability.Available:
+                        returnMessage = "Fingerprint verification is available.";
+                        break;
+                    case Windows.Security.Credentials.UI.UserConsentVerifierAvailability.DeviceBusy:
+                        returnMessage = "Biometric device is busy.";
+                        break;
+                    case Windows.Security.Credentials.UI.UserConsentVerifierAvailability.DeviceNotPresent:
+                        returnMessage = "No biometric device found.";
+                        break;
+                    case Windows.Security.Credentials.UI.UserConsentVerifierAvailability.DisabledByPolicy:
+                        returnMessage = "Biometric verification is disabled by policy.";
+                        break;
+                    case Windows.Security.Credentials.UI.UserConsentVerifierAvailability.NotConfiguredForUser:
+                        returnMessage = "The user has no fingerprints registered. Please add a fingerprint to the " +
+                                        "fingerprint database and try again.";
+                        break;
+                    default:
+                        returnMessage = "Fingerprints verification is currently unavailable.";
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                returnMessage = "Fingerprint authentication availability check failed: " + ex.ToString();
+            }
+
+            return returnMessage;
         }
 
         StorageFile source, destination;
