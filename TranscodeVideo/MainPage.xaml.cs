@@ -35,7 +35,8 @@ namespace TranscodeVideo
         }
 
         StorageFile source, destination;
-        uint Source_height, Source_width,Source_frameRate, SampleRate;
+        uint Source_height, Source_width,Source_frameRate, SampleRate, dataRate;
+        VideoEncodingProperties property;
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
             destination = await ApplicationData.Current.LocalFolder.CreateFileAsync("myfile1",CreationCollisionOption.ReplaceExisting);
@@ -46,18 +47,20 @@ namespace TranscodeVideo
             openPicker.FileTypeFilter.Add(".flv");
             openPicker.FileTypeFilter.Add(".3gp");
             openPicker.FileTypeFilter.Add(".avi");
+            openPicker.FileTypeFilter.Add(".mkv");
             source = await openPicker.PickSingleFileAsync();
 
             //获取视频信息
             if (source != null)
             {
                 var clip = await MediaClip.CreateFromFileAsync(source);
-                VideoEncodingProperties property = clip.GetVideoEncodingProperties();
+                property = clip.GetVideoEncodingProperties();
                 string encodeInfo = property.Subtype;
                 Source_height = property.Height;
                 Source_width = property.Width;
+                
                 Source_frameRate = property.FrameRate.Numerator;
-                uint dataRate = property.Bitrate;
+                dataRate = property.Bitrate;
             }
             //获取声频信息
             if (source != null)
@@ -84,15 +87,35 @@ namespace TranscodeVideo
 
         private async void Button_Click_1(object sender, RoutedEventArgs e)
         {
-            MediaEncodingProfile profile = MediaEncodingProfile.CreateMp4(VideoEncodingQuality.Vga);
             //MediaEncodingProfile profile = new MediaEncodingProfile();
-            profile.Video.Subtype = MediaEncodingSubtypes.H264;
+            //profile.Video = property;
+
+            //profile.Video.Subtype = MediaEncodingSubtypes.H264;
             //profile.Video.Height = Source_height;
             //profile.Video.Width = Source_width;
             //profile.Video.FrameRate.Numerator = Source_frameRate;
+            //profile.Audio.Subtype = MediaEncodingSubtypes.Aac;
             //profile.Audio.SampleRate = SampleRate;
+
+
+            MediaEncodingProfile profile = await MediaEncodingProfile.CreateFromFileAsync(source);
+            profile.Video.Subtype = MediaEncodingSubtypes.H264;
+            profile.Video.Height = Source_height;
+            profile.Video.Width = Source_width;
+            profile.Video.FrameRate.Numerator = Source_frameRate;
+            profile.Audio.SampleRate = SampleRate;
             profile.Audio.Subtype = MediaEncodingSubtypes.Aac;
             MediaTranscoder transcoder = new MediaTranscoder();
+
+            //MediaEncodingProfile profile = new MediaEncodingProfile();
+            //profile.Video.Subtype = MediaEncodingSubtypes.H264;
+            //profile.Video.Height = Source_height;
+            //profile.Video.Width = Source_width;
+            //profile.Video.FrameRate.Numerator = Source_frameRate;
+            //profile.Video.Bitrate = property.Bitrate;
+            //profile.Audio.SampleRate = SampleRate;
+            //profile.Audio.Subtype = MediaEncodingSubtypes.Aac;
+            //MediaTranscoder transcoder = new MediaTranscoder();
             PrepareTranscodeResult prepareOp = await
                 transcoder.PrepareFileTranscodeAsync(source, destination, profile);
             if (prepareOp.CanTranscode)
